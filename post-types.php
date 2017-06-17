@@ -53,61 +53,41 @@ function jb_create_post_types(){
       'has_archive' => true,
     )
   );
+}
+    //End function jb_create_post_types
 
-  //Define callback function for carousel image uploader meta box
+  add_action('init', 'jb_create_post_types');
 
-  function media_uploader_box(){
-    global $post;
-      $meta = get_post_meta( $post->ID, 'jb_carousel_images', true); ?>
-
-    <input type="hidden" name="jb_carousel_image_nonce" value="<?php echo wp_create_nonce( basename(__FILE__) ); ?>">
-
-    <p>
-    	<label for="jb_carousel_images[image]">Image Upload</label><br>
-    	<input type="text" name="jb_carousel_images[image]" id="jb_carousel_images[image]" class="meta-image regular-text" value="<?php echo $meta['image']; ?>">
-    	<input type="button" class="button image-upload" value="Browse">
-    </p>
-  <div class="image-preview"><img src="<?php echo $meta['image']; ?>" style="max-width: 250px;"></div>
-
-  <?php }
-  //End callback function
-
-  //Begin image upload save function
-  function save_jb_carousel_images( $post_id ) {
-  	// verify nonce
-  	if ( !wp_verify_nonce( $_POST['jb_carousel_image_nonce'], basename(__FILE__) ) ) {
-  		return $post_id;
-  	}
-  	// check autosave
-  	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-  		return $post_id;
-  	}
-  	// check permissions
-  	if ( 'page' === $_POST['post_type'] ) {
-  		if ( !current_user_can( 'edit_page', $post_id ) ) {
-  			return $post_id;
-  		} elseif ( !current_user_can( 'edit_post', $post_id ) ) {
-  			return $post_id;
-  		}
-  	}
-
-  	$old = get_post_meta( $post_id, 'jb_carousel_images', true );
-  	$new = $_POST['jb_carousel_images'];
-
-  	if ( $new && $new !== $old ) {
-  		update_post_meta( $post_id, 'jb_carousel_images', $new );
-  	} elseif ( '' === $new && $old ) {
-  		delete_post_meta( $post_id, 'jb_carousel_images', $old );
-  	}
+  //Add meta box for Portfolio post carousel images:
+  //WORKING:
+  function jb_add_meta_boxes($post){
+    add_meta_box(
+      'jb_carousel_images',
+      __( 'Portfolio Carousel Images'),
+      'media_uploader_box',
+      'jb_portfolio',
+      'normal',
+      'default'
+    );
   }
-  //End image upload save function
-  add_action( 'save_post', 'save_jb_carousel_images' );
+  add_action( 'add_meta_boxes','jb_add_meta_boxes');
 
-  ?>
-  <script>
-  (function($){
+  //WORKING:
+  function media_uploader_box() {
+  	global $post;
+  		$meta = get_post_meta( $post->ID, 'jb_carousel_images', true ); ?>
 
-    $(document).ready(function ($) {
+  	<input type="hidden" name="your_meta_box_nonce" value="<?php echo wp_create_nonce( basename(__FILE__) ); ?>">
+
+      <!-- All fields will go here -->
+      <p>
+      	<label for="jb_carousel_images">Image Upload</label><br>
+      	<input type="text" name="jb_carousel_images" id="jb_carousel_images" class="meta-image regular-text" value="<?php echo $meta['image']; ?>">
+      	<input type="button" class="button image-upload" value="Browse">
+      </p>
+
+      <script>
+  jQuery(document).ready(function ($) {
 
   	// Instantiates the variable that holds the media library frame.
   	var meta_image_frame;
@@ -139,43 +119,41 @@ function jb_create_post_types(){
   		meta_image_frame.open();
   	});
   });
-})(jQuery);
   </script>
-  <?php
 
-  // End media_uploader_box function
-      function admin_scripts(){
-        wp_enqueue_script('media-upload');
-        wp_enqueue_script('thickbox');
-      }
+  <div class="image-preview"><img src="<?php echo $meta['image']; ?>" style="max-width: 250px;"></div>
 
-      function admin_styles(){
-        wp_enqueue_style('thickbox');
-      }
+  	<?php }
 
-      add_action('admin_print_scripts', 'admin_scripts');
-      add_action('admin_print_styles', 'admin_styles');
+  function save_your_fields_meta( $post_id ) {
+  	// verify nonce
+  	if ( !wp_verify_nonce( $_POST['your_meta_box_nonce'], basename(__FILE__) ) ) {
+  		return $post_id;
+  	}
+  	// check autosave
+  	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+  		return $post_id;
+  	}
+  	// check permissions
+  	if ( 'page' === $_POST['post_type'] ) {
+  		if ( !current_user_can( 'edit_page', $post_id ) ) {
+  			return $post_id;
+  		} elseif ( !current_user_can( 'edit_post', $post_id ) ) {
+  			return $post_id;
+  		}
+  	}
 
+  	$old = get_post_meta( $post_id, 'jb_carousel_images', true );
+  	$new = $_POST['jb_carousel_images'];
 
-
-  //Add meta box for Portfolio post carousel images:
-  function jb_add_meta_boxes($post){
-    add_meta_box(
-      'jb_carousel_images',
-      __( 'Portfolio Carousel Images'),
-      'media_uploader_box',
-      'jb_portfolio',
-      'normal',
-      'default'
-    );
+  	if ( $new && $new !== $old ) {
+  		update_post_meta( $post_id, 'jb_carousel_images', $new );
+  	} elseif ( '' === $new && $old ) {
+  		delete_post_meta( $post_id, 'jb_carousel_images', $old );
+  	}
   }
-  add_action( 'add_meta_boxes','jb_add_meta_boxes');
+  add_action( 'save_post', 'save_your_fields_meta' );
 
-
-}
-    //End function jb_create_post_types
-
-  add_action('init', 'jb_create_post_types');
 
 
  ?>
