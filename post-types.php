@@ -42,31 +42,12 @@ function jb_create_post_types(){
   register_taxonomy_for_object_type( 'category', 'jb_portfolio');
   register_taxonomy_for_object_type( 'post_tag', 'jb_portfolio');
 
-  register_post_type( 'jb_blog',
-    array(
-      'labels' => array(
-        'name' => __( 'Blog Posts'),
-        'singular_name' => __( 'Blog Post')
-      ),
-      'supports' => array(
-        'title',
-        'editor',
-        'excerpt',
-        'thumbnail'),
-      'public' => true,
-      'has_archive' => true,
-      'taxonomies' => array(
-        'post_tag',
-        'category'),
-    )
-  );
 }
     //End function jb_create_post_types
 
   add_action('init', 'jb_create_post_types');
 
   //Add meta box for Portfolio post carousel images:
-  //WORKING:
   function jb_add_meta_boxes($post){
     add_meta_box(
       'jb_carousel_images',
@@ -79,7 +60,6 @@ function jb_create_post_types(){
   }
   add_action( 'add_meta_boxes','jb_add_meta_boxes');
 
-  //WORKING:
   function media_uploader_box() {
   	global $post;
   		$meta = get_post_meta( $post->ID, 'jb_carousel_images', true );
@@ -162,68 +142,5 @@ function jb_create_post_types(){
   }
   add_action( 'save_post', 'save_your_fields_meta' );
 
-// Add meta box for Featured Post checkbox:
-//Modified from solution at http://smallenvelop.com/how-to-create-featured-posts-in-wordpress/
-function jb_add_featured_post_meta($post){
-  add_meta_box(
-    'meta_checkbox',
-    __( 'Featured Post'),
-    'jb_featured_post_callback',
-    'jb_blog',
-    'normal',
-    'default',
-    'post'
-  );
-}
-//Featured post callback:
-function jb_featured_post_callback($post){
-  $featured = get_post_meta( $post->ID );
-  ?>
 
-  <p>
-    <div class="sm-row-content">
-      <label for="meta_checkbox">
-        <input type="checkbox" name="meta_checkbox" id="meta_checkbox" value="yes" <?php if(isset( $featured['meta_checkbox'])) checked( $featured['meta_checkbox'][0], 'yes'); ?>/>
-        <?php _e( 'Feature this post')?>
-      </label>
-    </div>
-  </p>
-  <?php
-}
-add_action( 'add_meta_boxes', 'jb_add_featured_post_meta');
-
-// Saves the custom meta input
-
-function jb_featured_post_meta_save( $post_id ) {
-
-    // Checks save status
-    $is_autosave = wp_is_post_autosave( $post_id );
-    $is_revision = wp_is_post_revision( $post_id );
-    $is_valid_nonce = ( isset( $_POST[ 'jb_meta_box_nonce' ] ) && wp_verify_nonce( $_POST[ 'jb_meta_box_nonce' ], basename( __FILE__ ) ) ) ? 'true' : 'false';
-
-    // Exits script depending on save status
-    if ( $is_autosave || $is_revision || !$is_valid_nonce ) {
-        return;
-    }
-
- // Checks for input and saves
-if( isset( $_POST[ 'meta_checkbox' ] ) ) {
-    update_post_meta( $post_id, 'meta_checkbox', 'yes' );
-} else {
-    update_post_meta( $post_id, 'meta_checkbox', '' );
-}
-
-}
-//End jb_featured_post_meta_save
-add_action( 'save_post', 'jb_featured_post_meta_save' );
-
-//Include custom post types in the main query:
-//WARNING: THE FOLLOWING MADE ALL PAGES REFER TO INDEX.PHP
-// function jb_custom_post_type_filter($query){
-//   if(!is_admin() && $query->is_main_query() ){
-//       $query->set( 'post_type', array( 'post', 'jb_blog'));
-//   }
-// }
-//
-// add_action('pre_get_posts', 'jb_custom_post_type_filter');
  ?>
