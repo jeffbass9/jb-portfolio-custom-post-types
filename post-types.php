@@ -48,9 +48,16 @@ function jb_create_post_types(){
         'name' => __( 'Blog Posts'),
         'singular_name' => __( 'Blog Post')
       ),
-      'supports' => array( 'title', 'editor', 'thumbnail'),
+      'supports' => array(
+        'title',
+        'editor',
+        'excerpt',
+        'thumbnail'),
       'public' => true,
       'has_archive' => true,
+      'taxonomies' => array(
+        'post_tag',
+        'category'),
     )
   );
 }
@@ -75,14 +82,15 @@ function jb_create_post_types(){
   //WORKING:
   function media_uploader_box() {
   	global $post;
-  		$meta = get_post_meta( $post->ID, 'jb_carousel_images', true ); ?>
+  		$meta = get_post_meta( $post->ID, 'jb_carousel_images', true );
+      ?>
 
-  	<input type="hidden" name="your_meta_box_nonce" value="<?php echo wp_create_nonce( basename(__FILE__) ); ?>">
+  	<input type="hidden" name="jb_meta_box_nonce" value="<?php echo wp_create_nonce( basename(__FILE__) ); ?>">
 
       <!-- All fields will go here -->
       <p>
       	<label for="jb_carousel_images">Image Upload</label><br>
-      	<input type="text" name="jb_carousel_images" id="jb_carousel_images" class="meta-image regular-text" value="<?php echo $meta['image']; ?>">
+      	<input type="text" name="jb_carousel_images" id="jb_carousel_images" class="meta-image regular-text" value="<?php echo $meta; ?>">
       	<input type="button" class="button image-upload" value="Browse">
       </p>
 
@@ -121,13 +129,14 @@ function jb_create_post_types(){
   });
   </script>
 
-  <div class="image-preview"><img src="<?php echo $meta['image']; ?>" style="max-width: 250px;"></div>
+  <div class="image-preview"><img src="<?php echo $meta; ?>" style="max-width: 250px;"></div>
 
   	<?php }
 
   function save_your_fields_meta( $post_id ) {
   	// verify nonce
-  	if ( !wp_verify_nonce( $_POST['your_meta_box_nonce'], basename(__FILE__) ) ) {
+    //Line below fixed with solution at https://wordpress.stackexchange.com/questions/91402/undefined-index-at-nonce-in-custom-post-metabox
+  	if ( isset($_POST['at_nonce']) && !wp_verify_nonce( $_POST['jb_meta_box_nonce'], basename(__FILE__) ) ) {
   		return $post_id;
   	}
   	// check autosave
@@ -143,17 +152,78 @@ function jb_create_post_types(){
   		}
   	}
 
-  	$old = get_post_meta( $post_id, 'jb_carousel_images', true );
-  	$new = $_POST['jb_carousel_images'];
+    $old = get_post_meta( $post_id, 'jb_carousel_images', true );
+    $new = $_POST['jb_carousel_images'];
 
-  	if ( $new && $new !== $old ) {
-  		update_post_meta( $post_id, 'jb_carousel_images', $new );
-  	} elseif ( '' === $new && $old ) {
-  		delete_post_meta( $post_id, 'jb_carousel_images', $old );
-  	}
+
+    if ( $new && $new !== $old ) {
+      add_post_meta( $post_id, 'jb_carousel_images', $new, false);
+    }
   }
   add_action( 'save_post', 'save_your_fields_meta' );
 
+// Add meta box for Featured Post checkbox:
+//Modified from solution at http://smallenvelop.com/how-to-create-featured-posts-in-wordpress/
+function jb_add_featured_post_meta($post){
+  add_meta_box(
+    'meta_checkbox',
+    __( 'Featured Post'),
+    'jb_featured_post_callback',
+    'jb_blog',
+    'normal',
+    'default',
+    'post'
+  );
+}
+//Featured post callback:
+function jb_featured_post_callback($post){
+  $featured = get_post_meta( $post->ID );
+  ?>
 
+  <p>
+    <div class="sm-row-content">
+      <label for="meta_checkbox">
+        <input type="checkbox" name="meta_checkbox" id="meta_checkbox" value="yes" <?php if(isset( $featured['meta_checkbox'])) checked( $featured['meta_checkbox'][0], 'yes'); ?>/>
+        <?php _e( 'Feature this post')?>
+      </label>
+    </div>
+  </p>
+  <?php
+}
+add_action( 'add_meta_boxes', 'jb_add_featured_post_meta');
 
+// Saves the custom meta input
+
+function jb_featured_post_meta_save( $post_id ) {
+
+    // Checks save status
+    $is_autosave = wp_is_post_autosave( $post_id );
+    $is_revision = wp_is_post_revision( $post_id );
+    $is_valid_nonce = ( isset( $_POST[ 'jb_meta_box_nonce' ] ) && wp_verify_nonce( $_POST[ 'jb_meta_box_nonce' ], basename( __FILE__ ) ) ) ? 'true' : 'false';
+
+    // Exits script depending on save status
+    if ( $is_autosave || $is_revision || !$is_valid_nonce ) {
+        return;
+    }
+
+ // Checks for input and saves
+if( isset( $_POST[ 'meta_checkbox' ] ) ) {
+    update_post_meta( $post_id, 'meta_checkbox', 'yes' );
+} else {
+    update_post_meta( $post_id, 'meta_checkbox', '' );
+}
+
+}
+//End jb_featured_post_meta_save
+add_action( 'save_post', 'jb_featured_post_meta_save' );
+
+//Include custom post types in the main query:
+//WARNING: THE FOLLOWING MADE ALL PAGES REFER TO INDEX.PHP
+// function jb_custom_post_type_filter($query){
+//   if(!is_admin() && $query->is_main_query() ){
+//       $query->set( 'post_type', array( 'post', 'jb_blog'));
+//   }
+// }
+//
+// add_action('pre_get_posts', 'jb_custom_post_type_filter');
  ?>

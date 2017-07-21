@@ -374,3 +374,41 @@ function bd_parse_post_variables(){
 
    <!-- REALLY stop The Loop. -->
    <?php endif; ?>
+
+
+
+<!--
+//My potential solution for the multiple image upload problem: -->
+<?php
+function save_your_fields_meta( $post_id ) {
+  // verify nonce
+  if ( !wp_verify_nonce( $_POST['your_meta_box_nonce'], basename(__FILE__) ) ) {
+    return $post_id;
+  }
+  // check autosave
+  if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+    return $post_id;
+  }
+  // check permissions
+  if ( 'page' === $_POST['post_type'] ) {
+    if ( !current_user_can( 'edit_page', $post_id ) ) {
+      return $post_id;
+    } elseif ( !current_user_can( 'edit_post', $post_id ) ) {
+      return $post_id;
+    }
+  }
+  //This is what I'm going to have to change in order to be able to upload multiple images:
+  $old = get_post_meta( $post_id, 'jb_carousel_images', true );
+  $new = $_POST['jb_carousel_images'];
+
+
+  if ( $new && $new !== $old ) {
+    add_post_meta( $post_id, 'jb_carousel_images', $new, false);
+  } 
+}
+add_action( 'save_post', 'save_your_fields_meta' );
+?>
+
+
+
+?>
